@@ -1,0 +1,174 @@
+---
+- name: Install and configure OpenJDK, Docker, and AWS CLI on Ubuntu
+  hosts: ubuntu_servers
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    # Create Jenkins directory
+    - name: Create jenkins directory
+      ansible.builtin.file:
+        path: ~/jenkins
+        state: directory
+        mode: '0755'
+
+    # Install OpenJDK 17
+    - name: Install OpenJDK 17 JDK
+      ansible.builtin.apt:
+        name: openjdk-17-jdk
+        state: present
+        update_cache: yes
+      when: ansible_os_family == 'Debian'
+
+    # Docker installation tasks
+    - name: Install required system packages for Docker
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      ansible.builtin.apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        update_cache: yes
+
+    - name: Install Docker packages
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+
+    - name: Add current user to docker group
+      ansible.builtin.user:
+        name: "{{ ansible_user_id }}"
+        groups: docker
+        append: yes
+
+    - name: Start and enable Docker service
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: yes
+
+    # AWS CLI installation tasks
+    - name: Install AWS CLI dependencies
+      ansible.builtin.apt:
+        name:
+          - unzip
+          - python3-pip
+        state: present
+
+    - name: Download AWS CLI v2
+      ansible.builtin.get_url:
+        url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: /tmp/awscliv2.zip
+        mode: '0755'
+
+    - name: Unzip AWS CLI
+      ansible.builtin.unarchive:
+        src: /tmp/awscliv2.zip
+        dest: /tmp
+        remote_src: yes
+
+    - name: Install AWS CLI
+      ansible.builtin.command: /tmp/aws/install
+      args:
+        creates: /usr/local/bin/aws
+
+    - name: Clean up AWS CLI installation files
+      ansible.builtin.file:
+        path: /tmp/awscliv2.zip
+        state: absent
+      ignore_errors: yes
+
+    - name: Clean up extracted AWS CLI files
+      ansible.builtin.file:
+        path: /tmp/aws
+        state: absent
+      ignore_errors: yes
+
+    # Terraform installation tasks
+    - name: Install Terraform dependencies
+      ansible.builtin.apt:
+        name:
+          - wget
+          - gnupg
+          - software-properties-common
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Add HashiCorp GPG key
+      ansible.builtin.apt_key:
+        url: https://apt.releases.hashicorp.com/gpg
+        state: present
+
+    - name: Add HashiCorp repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64] https://apt.releases.hashicorp.com {{ ansible_distribution_release }} main"
+        state: present
+        update_cache: yes
+
+    - name: Install Terraform
+      ansible.builtin.apt:
+        name: terraform
+        state: present
+
+    - name: Install Ansible (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name: ansible
+        state: present
+      when: ansible_facts['os_family'] == 'Debian'
+
+
+    # Verify installations (optional)
+    - name: Verify Java installation
+      ansible.builtin.command: java -version
+      register: java_version
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Verify Docker installation
+      ansible.builtin.command: docker --version
+      register: docker_version
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Verify AWS CLI installation
+      ansible.builtin.command: aws --version
+      register: aws_version
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Verify Terraform installation
+      ansible.builtin.command: terraform -version
+      register: terraform_version
+      changed_when: false
+      ignore_errors: yes
+
+
+    - name: Verify Ansible installation
+      ansible.builtin.command: ansible --version
+      register: ansible_version
+      changed_when: false
+
+    - name: Show installation versions
+      ansible.builtin.debug:
+        msg:
+          - "Java version: {{ java_version.stderr | default(java_version.stdout) }}"
+          - "Docker version: {{ docker_version.stdout }}"
+          - "AWS CLI version: {{ aws_version.stdout }}"
+          - "Terraform version: {{ terraform_version.stdout | regex_replace('\n.*', '') }}"

@@ -1,0 +1,49 @@
+Host bastion
+  HostName 54.166.71.43
+  User ubuntu
+  IdentityFile ~/.ssh/test.pem
+
+Host ansible-slave
+  HostName 172.31.80.123
+  User ubuntu
+  IdentityFile ~/.ssh/test.pem
+  ProxyJump bastion
+
+Host node-app
+  HostName 172.31.80.123
+  User ubuntu
+  IdentityFile ~/.ssh/test.pem
+  ProxyJump bastion
+
+
+
+# command to port forwarding from bastion to local
+ssh -i ~/.ssh/new.pem -R 8080:localhost:8080 ec2-user@3.93.246.39 -N
+ssh -R port_of_bastion:localhost:port_of_local_host ec2-user@bastion_ip -N
+
+# edit ssh config file
+sudo vi /etc/ssh/sshd_config
+
+#add the following lines
+GatewayPorts yes
+AllowTcpForwarding yes
+
+sudo systemctl restart sshd
+
+# Jenkins agent installation
+curl -sO http://52.207.113.142:8080/jnlpJars/agent.jar
+java -jar agent.jar -url http://52.207.113.142:8080/ -secret 90f28a9f16a40698c9d926db75f6a2fe586793f1f79675bc32da21c7f3ef66e6 -name private -webSocket -workDir "/home/ubuntu/jenkins" >/dev/null 2>&1 &
+
+
+
+port     : process.env.RDS_PORT,
+
+docker run -d -p 80:3000 \
+  -e REDIS_HOSTNAME=free-tier-redis.xwwijd.0001.use1.cache.amazonaws.com \
+  -e REDIS_PORT=6379 \
+  -e RDS_HOSTNAME=free-tier-mysql.ci7ocgsiegwd.us-east-1.rds.amazonaws.com \
+  -e RDS_USERNAME=admin \
+  -e RDS_PASSWORD=postgres \
+  -e RDS_PORT=3306 \
+  127214177129.dkr.ecr.us-east-1.amazonaws.com/node-app:latest
+
