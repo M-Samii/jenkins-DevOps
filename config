@@ -18,10 +18,10 @@ Host node-app
 
 
 # command to port forwarding from bastion to local
-ssh -i ~/.ssh/new.pem -R 8080:localhost:8080 ec2-user@3.93.246.39 -N
+ssh -i ~/.ssh/mykey.pem -R 8080:localhost:8080 ubuntu@3.93.246.39 -N
 ssh -R port_of_bastion:localhost:port_of_local_host ec2-user@bastion_ip -N
 
-# edit ssh config file
+# edit ssh config file in bastion
 sudo vi /etc/ssh/sshd_config
 
 #add the following lines
@@ -37,6 +37,8 @@ java -jar agent.jar -url http://52.207.113.142:8080/ -secret 90f28a9f16a40698c9d
 
 
 port     : process.env.RDS_PORT,
+
+# docker build in node-app server 
 
 docker run -d -p 80:3000 \
   -e REDIS_HOSTNAME=free-tier-redis.xwwijd.0001.use1.cache.amazonaws.com \
