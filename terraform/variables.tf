@@ -13,17 +13,6 @@ variable "region" {
   default = "us-east-1"
 }
 
-variable "worker_ami" {
-  type = string
-}
-
-variable "result_ami" {
-  type = string
-}
-
-variable "vote_ami" {
-  type = string
-}
 
 
 # Variables
@@ -34,4 +23,8 @@ variable "db_password" {
   sensitive = true
   default = "admin"
   
+}
+variable "db_username" {
+  type = string
+  default = "admin"
 }

@@ -69,3 +69,7 @@ output "ecr_profile" {
   value = aws_iam_instance_profile.ecr_access_profile.name
 }
 
+output "aws_ecr_repository" {
+  value = aws_ecr_repository.app_repo.repository_url
+  
+}

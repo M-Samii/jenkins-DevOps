@@ -4,6 +4,15 @@
   become: yes
   gather_facts: yes
 
+  vars:
+    REGISTRY: "{{ REGISTRY }}"
+    REPOSITORY: "{{ REPOSITORY }}"
+    IMAGE_TAG: "{{ image_var | default('latest') }}"
+    RDS_HOSTNAME: "{{ RDS_HOSTNAME }}"
+    RDS_PASSWORD: "{{ RDS_PASSWORD }}"
+    RDS_USERNAME: "{{ RDS_USERNAME }}"
+    REDIS_HOSTNAME: "{{ REDIS_HOSTNAME }}"
+
   tasks:
     # Docker installation tasks
     - name: Install required system packages for Docker
@@ -73,6 +82,7 @@
       args:
         creates: /usr/local/bin/aws
 
+
     - name: Clean up AWS CLI installation files
       ansible.builtin.file:
         path: /tmp/awscliv2.zip
@@ -85,4 +95,40 @@
         state: absent
       ignore_errors: yes
 
-  
+    - name: Log in to AWS ECR using variables
+      shell: |
+        aws ecr get-login-password --region us-east-1 | \
+        sudo docker login --username AWS --password-stdin {{ REGISTRY }}
+      args:
+        executable: /bin/bash
+      register: ecr_login
+      changed_when: "'Login Succeeded' in ecr_login.stdout"
+
+    - name: Stop the container if it exists
+      command: "sudo docker stop nodeapp"
+      ignore_errors: yes
+      register: stop_container
+      changed_when: "'No such container' not in stop_container.stderr"
+
+    - name: Remove the container if it exists
+      command: "sudo docker rm nodeapp"
+      ignore_errors: yes
+      register: remove_container
+      changed_when: "'No such container' not in remove_container.stderr"
+
+    - name: Pull the latest image
+      command: "sudo docker pull {{ REGISTRY }}/{{ REPOSITORY }}:{{ IMAGE_TAG }}"
+      register: pull_result
+      changed_when: "'Downloaded newer image' in pull_result.stdout"
+
+    - name: Run the container
+      command: >
+        sudo docker run -d --name nodeapp -p 80:3000
+        -e REDIS_HOSTNAME={{ REDIS_HOSTNAME }}
+        -e REDIS_PORT=6379
+        -e RDS_HOSTNAME={{ RDS_HOSTNAME }}
+        -e RDS_USERNAME={{ RDS_USERNAME }}
+        -e RDS_PASSWORD={{ RDS_PASSWORD }}
+        -e RDS_PORT=3306
+        {{ REGISTRY }}/{{ REPOSITORY }}:{{ IMAGE_TAG }}
+      when: pull_result is changed or stop_container is changed or remove_container is changed

@@ -12,4 +12,6 @@ resource "aws_lb" "test" {
   enable_deletion_protection = false
 
 }
-
+output "lb_url" {
+  value = "http://${aws_lb.test.dns_name}"
+}

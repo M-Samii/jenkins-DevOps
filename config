@@ -18,7 +18,8 @@ Host node-app
 
 
 # command to port forwarding from bastion to local
-ssh -i ~/.ssh/mykey.pem -R 8080:localhost:8080 ubuntu@3.93.246.39 -N
+ssh -i ~/.ssh/mykey.pem -R 8080:localhost:8080 ubuntu@3.91.184.224 -N
+
 ssh -R port_of_bastion:localhost:port_of_local_host ec2-user@bastion_ip -N
 
 # edit ssh config file in bastion
