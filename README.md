@@ -17,25 +17,22 @@ Jenkins Controller (Accessible from browser, e.g., on port 8080)
 🔐 SSH Configuration (~/.ssh/config)
 Configure your SSH to route through the bastion host:
 
-ssh
-Copy
-Edit
-Host bastion
-  HostName 54.166.71.43
-  User ubuntu
-  IdentityFile ~/.ssh/test.pem
-
-Host ansible-slave
-  HostName 172.31.80.123
-  User ubuntu
-  IdentityFile ~/.ssh/test.pem
-  ProxyJump bastion
-
-Host node-app
-  HostName 172.31.80.123
-  User ubuntu
-  IdentityFile ~/.ssh/test.pem
-  ProxyJump bastion
+                Host bastion
+                  HostName 54.166.71.43
+                  User ubuntu
+                  IdentityFile ~/.ssh/test.pem
+                
+                Host ansible-slave
+                  HostName 172.31.80.123
+                  User ubuntu
+                  IdentityFile ~/.ssh/test.pem
+                  ProxyJump bastion
+                
+                Host node-app
+                  HostName 172.31.80.123
+                  User ubuntu
+                  IdentityFile ~/.ssh/test.pem
+                  ProxyJump bastion
 
 
 📦 Ansible Setup
